@@ -2,21 +2,15 @@ import { Card, Typography } from '@mui/material';
 import Box from '@mui/material/Box';
 import InputAdornment from '@mui/material/InputAdornment';
 import TextField from '@mui/material/TextField';
-import { styled } from '@mui/system';
 import EmailIcon from '@mui/icons-material/Email';
 import HttpsIcon from '@mui/icons-material/Https';
 import Button from '@mui/material/Button';
 import ContactSupportIcon from '@mui/icons-material/ContactSupport';
 import { blue } from '@mui/material/colors';
 import Link from 'next/link';
+import Background from '@/components/background';
 
 const login = () => {
-    const Background = styled('div')(
-        () => `
-        min-height:100vh;
-        width:100%;
-    `
-    );
     return (
         <Background>
             <Box
@@ -37,7 +31,7 @@ const login = () => {
                         borderRadius: {
                             md: '15px',
                         },
-                        position: 'relative',
+                        backgroundColor:'transparent',
                     }}
                 >
                     <Typography
@@ -50,6 +44,7 @@ const login = () => {
                     </Typography>
                     <Box>
                         <TextField
+                            size='small'
                             fullWidth
                             sx={{ mb: 2 }}
                             label='Email'
@@ -66,6 +61,7 @@ const login = () => {
                     <Box>
                         <TextField
                             fullWidth
+                            size='small'
                             sx={{ mb: 2 }}
                             type='password'
                             label='Password'
@@ -79,14 +75,14 @@ const login = () => {
                             }}
                         />
                     </Box>
-                    <Box mb={3}>
-                        <Button variant='contained' fullWidth sx={{ py: 2 }}>
+                    <Box mb={2}>
+                        <Button variant='contained' fullWidth>
                             Sign In
                         </Button>
                     </Box>
                     <Box textAlign='center'>
                         <Link href='/register' style={{ color: blue[500] }}>
-                            If you dont have account?.Go to register.
+                            <Box component="span">If you dont have account?.Go to register.</Box>
                         </Link>
                     </Box>
                 </Card>
