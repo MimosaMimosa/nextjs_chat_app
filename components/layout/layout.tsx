@@ -1,18 +1,14 @@
 import Grid from '@mui/material/Grid'
 import { FC } from 'react'
 import { blue, grey } from '@mui/material/colors'
-import {
-  Badge,
-  Box,
-  Stack,
-  Typography,
-} from '@mui/material'
+import { Badge, Box, Stack, Typography } from '@mui/material'
 import Person2Icon from '@mui/icons-material/Person2'
 import SettingsIcon from '@mui/icons-material/Settings'
 import { styled } from '@mui/system'
 import SearchIcon from '@mui/icons-material/Search'
 import NotificationsIcon from '@mui/icons-material/Notifications'
 import EmailIcon from '@mui/icons-material/Email'
+import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 
 const SearchBar = styled('div')(
   () => `
@@ -91,6 +87,23 @@ const Layout: FC<any> = ({ children }) => {
           >
             <SettingsIcon sx={{ color: 'white' }} />
             <Box ml={2}>Setting</Box>
+          </Box>
+          <Box
+            sx={{
+              py: 1,
+              display: 'flex',
+              alignItems: 'center',
+              color: 'white',
+              px: 6,
+              cursor: 'pointer',
+              '&:hover': {
+                backgroundColor: blue[600],
+                fontWeight: 400,
+              },
+            }}
+          >
+            <ChatBubbleIcon sx={{ color: 'white' }} />
+            <Box ml={2}>Chatting</Box>
           </Box>
         </Stack>
       </Grid>
