@@ -9,6 +9,7 @@ import SearchIcon from '@mui/icons-material/Search'
 import NotificationsIcon from '@mui/icons-material/Notifications'
 import EmailIcon from '@mui/icons-material/Email'
 import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
+import Link from 'next/link'
 
 const SearchBar = styled('div')(
   () => `
@@ -88,23 +89,25 @@ const Layout: FC<any> = ({ children }) => {
             <SettingsIcon sx={{ color: 'white' }} />
             <Box ml={2}>Setting</Box>
           </Box>
-          <Box
-            sx={{
-              py: 1,
-              display: 'flex',
-              alignItems: 'center',
-              color: 'white',
-              px: 6,
-              cursor: 'pointer',
-              '&:hover': {
-                backgroundColor: blue[600],
-                fontWeight: 400,
-              },
-            }}
-          >
-            <ChatBubbleIcon sx={{ color: 'white' }} />
-            <Box ml={2}>Chatting</Box>
-          </Box>
+          <Link href='/chat'>
+            <Box
+              sx={{
+                py: 1,
+                display: 'flex',
+                alignItems: 'center',
+                color: 'white',
+                px: 6,
+                cursor: 'pointer',
+                '&:hover': {
+                  backgroundColor: blue[600],
+                  fontWeight: 400,
+                },
+              }}
+            >
+              <ChatBubbleIcon sx={{ color: 'white' }} />
+              <Box ml={2}>Chatting</Box>
+            </Box>
+          </Link>
         </Stack>
       </Grid>
       <Grid item md={10} sx={{ backgroundColor: grey[50] }}>
