@@ -6,7 +6,8 @@ import Badge from '@/components/badge'
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import SentimentSatisfiedAltIcon from '@mui/icons-material/SentimentSatisfiedAlt';
 import SendIcon from '@mui/icons-material/Send';
-
+import io from 'socket.io-client';
+import { useEffect, useState } from 'react'
 interface MessageBoxProps {
     sender: number
 }
@@ -27,9 +28,8 @@ const Messages = styled('p')((props: MessageBoxProps) => ({
 const ChatArea = styled('div')(() => ({
     height: '70vh',
     display: 'flex',
-    alignItems: 'end',
+    justifyContent: 'end',
     padding: '15px',
-    overflow: 'hidden',
     overflowY: 'scroll',
     flexDirection: 'column',
     '&::-webkit-scrollbar': {
@@ -68,6 +68,21 @@ const ConservationCard = styled('div')(() => ({
 }))
 
 const Chat = () => {
+    const [isConnected, setIsConnected] = useState<Boolean>(false);
+        
+    useEffect(()=>{
+        const socket = io('ws://localhost:5000');
+        socket.on('connect',()=>{
+            setIsConnected(true)
+            
+            socket.emit('hello','world');
+        })
+        
+        socket.on('disconnect', () => {
+            setIsConnected(false);
+          });
+    },[])
+    
     return (
         <Layout>
             <Box sx={{ p: 2 }}>
@@ -110,187 +125,11 @@ const Chat = () => {
                                     <ChatMessageBox sender={2}>
                                         <Messages sender={2}>Hi</Messages>
                                     </ChatMessageBox>
-                                    <ChatMessageBox sender={1}>
-                                        <Avatar
-                                            sx={{ bgcolor: blue[500], mr: 1 }}
-                                            alt="Remy Sharp"
-                                            src="/broken-image.jpg"
-                                        >
-                                            B
-                                        </Avatar>
-                                        <div>
-                                            <Messages sender={1}>I wanna see you</Messages>
-                                            <Messages sender={1}>I miss you</Messages>
-                                        </div>
-                                    </ChatMessageBox>
-                                    <ChatMessageBox sender={2}>
-                                        <Messages sender={2}>Mee too</Messages>
-                                    </ChatMessageBox>
-                                    <ChatMessageBox sender={1}>
-                                        <Avatar
-                                            sx={{ bgcolor: blue[500], mr: 1 }}
-                                            alt="Remy Sharp"
-                                            src="/broken-image.jpg"
-                                        >
-                                            B
-                                        </Avatar>
-                                        <div>
-                                            <Messages sender={1}>Hello</Messages>
-                                            <Messages sender={1}>Hello</Messages>
-                                        </div>
-                                    </ChatMessageBox>
-                                    <ChatMessageBox sender={2}>
-                                        <Messages sender={2}>Hi</Messages>
-                                    </ChatMessageBox>
-                                    <ChatMessageBox sender={1}>
-                                        <Avatar
-                                            sx={{ bgcolor: blue[500], mr: 1 }}
-                                            alt="Remy Sharp"
-                                            src="/broken-image.jpg"
-                                        >
-                                            B
-                                        </Avatar>
-                                        <div>
-                                            <Messages sender={1}>I wanna see you</Messages>
-                                            <Messages sender={1}>I miss you</Messages>
-                                        </div>
-                                    </ChatMessageBox>
-                                    <ChatMessageBox sender={2}>
-                                        <Messages sender={2}>Mee too</Messages>
-                                    </ChatMessageBox>
-                                    <ChatMessageBox sender={1}>
-                                        <Avatar
-                                            sx={{ bgcolor: blue[500], mr: 1 }}
-                                            alt="Remy Sharp"
-                                            src="/broken-image.jpg"
-                                        >
-                                            B
-                                        </Avatar>
-                                        <div>
-                                            <Messages sender={1}>Hello</Messages>
-                                            <Messages sender={1}>Hello</Messages>
-                                        </div>
-                                    </ChatMessageBox>
-                                    <ChatMessageBox sender={2}>
-                                        <Messages sender={2}>Hi</Messages>
-                                    </ChatMessageBox>
-                                    <ChatMessageBox sender={1}>
-                                        <Avatar
-                                            sx={{ bgcolor: blue[500], mr: 1 }}
-                                            alt="Remy Sharp"
-                                            src="/broken-image.jpg"
-                                        >
-                                            B
-                                        </Avatar>
-                                        <div>
-                                            <Messages sender={1}>I wanna see you</Messages>
-                                            <Messages sender={1}>I miss you</Messages>
-                                        </div>
-                                    </ChatMessageBox>
-                                    <ChatMessageBox sender={2}>
-                                        <Messages sender={2}>Mee too</Messages>
-                                    </ChatMessageBox>
-                                    <ChatMessageBox sender={1}>
-                                        <Avatar
-                                            sx={{ bgcolor: blue[500], mr: 1 }}
-                                            alt="Remy Sharp"
-                                            src="/broken-image.jpg"
-                                        >
-                                            B
-                                        </Avatar>
-                                        <div>
-                                            <Messages sender={1}>Hello</Messages>
-                                            <Messages sender={1}>Hello</Messages>
-                                        </div>
-                                    </ChatMessageBox>
-                                    <ChatMessageBox sender={2}>
-                                        <Messages sender={2}>Hi</Messages>
-                                    </ChatMessageBox>
-                                    <ChatMessageBox sender={1}>
-                                        <Avatar
-                                            sx={{ bgcolor: blue[500], mr: 1 }}
-                                            alt="Remy Sharp"
-                                            src="/broken-image.jpg"
-                                        >
-                                            B
-                                        </Avatar>
-                                        <div>
-                                            <Messages sender={1}>I wanna see you</Messages>
-                                            <Messages sender={1}>I miss you</Messages>
-                                        </div>
-                                    </ChatMessageBox>
-                                    <ChatMessageBox sender={2}>
-                                        <Messages sender={2}>Mee too</Messages>
-                                    </ChatMessageBox>
-                                    <ChatMessageBox sender={1}>
-                                        <Avatar
-                                            sx={{ bgcolor: blue[500], mr: 1 }}
-                                            alt="Remy Sharp"
-                                            src="/broken-image.jpg"
-                                        >
-                                            B
-                                        </Avatar>
-                                        <div>
-                                            <Messages sender={1}>Hello</Messages>
-                                            <Messages sender={1}>Hello</Messages>
-                                        </div>
-                                    </ChatMessageBox>
-                                    <ChatMessageBox sender={2}>
-                                        <Messages sender={2}>Hi</Messages>
-                                    </ChatMessageBox>
-                                    <ChatMessageBox sender={1}>
-                                        <Avatar
-                                            sx={{ bgcolor: blue[500], mr: 1 }}
-                                            alt="Remy Sharp"
-                                            src="/broken-image.jpg"
-                                        >
-                                            B
-                                        </Avatar>
-                                        <div>
-                                            <Messages sender={1}>I wanna see you</Messages>
-                                            <Messages sender={1}>I miss you</Messages>
-                                        </div>
-                                    </ChatMessageBox>
-                                    <ChatMessageBox sender={2}>
-                                        <Messages sender={2}>Mee too</Messages>
-                                    </ChatMessageBox>
-                                    <ChatMessageBox sender={1}>
-                                        <Avatar
-                                            sx={{ bgcolor: blue[500], mr: 1 }}
-                                            alt="Remy Sharp"
-                                            src="/broken-image.jpg"
-                                        >
-                                            B
-                                        </Avatar>
-                                        <div>
-                                            <Messages sender={1}>Hello</Messages>
-                                            <Messages sender={1}>Hello</Messages>
-                                        </div>
-                                    </ChatMessageBox>
-                                    <ChatMessageBox sender={2}>
-                                        <Messages sender={2}>Hi</Messages>
-                                    </ChatMessageBox>
-                                    <ChatMessageBox sender={1}>
-                                        <Avatar
-                                            sx={{ bgcolor: blue[500], mr: 1 }}
-                                            alt="Remy Sharp"
-                                            src="/broken-image.jpg"
-                                        >
-                                            B
-                                        </Avatar>
-                                        <div>
-                                            <Messages sender={1}>I wanna see you</Messages>
-                                            <Messages sender={1}>I miss you</Messages>
-                                        </div>
-                                    </ChatMessageBox>
-                                    <ChatMessageBox sender={2}>
-                                        <Messages sender={2}>Mee too</Messages>
-                                    </ChatMessageBox>
                                 </Box>
                             </ChatArea>
                             <InputMessageBox>
-                                <CameraAltIcon sx={{ cursor: 'pinter' }} />
-                                <SentimentSatisfiedAltIcon sx={{ mx: 1, cursor: 'pinter' }} />
+                                <CameraAltIcon sx={{ cursor: 'pointer' }} />
+                                <SentimentSatisfiedAltIcon sx={{ mx: 1, cursor: 'pointer' }} />
                                 <InputMessage placeholder='Send Messages' />
                                 <SendIcon sx={{ mx: 1, cursor: 'pointer' }} />
                             </InputMessageBox>
@@ -400,7 +239,6 @@ const Chat = () => {
                                     <Avatar
                                         sx={{ bgcolor: 'white', cursor: 'pointer' ,color:blue[500]}}
                                         alt="Remy Sharp"
-                                        src="/broken-image.jpg"
                                     >
                                         B
                                     </Avatar>
