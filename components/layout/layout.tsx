@@ -1,7 +1,6 @@
 import Grid from '@mui/material/Grid'
-import { FC } from 'react'
-import { blue, grey } from '@mui/material/colors'
-import { Badge, Box, Stack, Typography } from '@mui/material'
+import { blue, green, grey } from '@mui/material/colors'
+import { Avatar, Badge, Box, Stack, Typography } from '@mui/material'
 import Person2Icon from '@mui/icons-material/Person2'
 import SettingsIcon from '@mui/icons-material/Settings'
 import { styled } from '@mui/system'
@@ -10,6 +9,9 @@ import NotificationsIcon from '@mui/icons-material/Notifications'
 import EmailIcon from '@mui/icons-material/Email'
 import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 import Link from 'next/link'
+import { signOut, useSession } from 'next-auth/react'
+import LogoutIcon from '@mui/icons-material/Logout';
+import { useRouter } from 'next/router'
 
 const SearchBar = styled('div')(
   () => `
@@ -31,7 +33,17 @@ const InputSearch = styled('input')({
   },
 })
 
-const Layout: FC<any> = ({ children }) => {
+const Layout = ({ children }: { children: any }) => {
+  const session:any = useSession();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    signOut({ redirect: false })
+      .then(function () {
+        router.push('/login');
+      })
+  }
+
   return (
     <Grid container>
       <Grid
@@ -55,23 +67,25 @@ const Layout: FC<any> = ({ children }) => {
           Chat Hub
         </Typography>
         <Stack spacing={1} mt={3}>
-          <Box
-            sx={{
-              py: 1,
-              display: 'flex',
-              alignItems: 'center',
-              color: 'white',
-              px: 6,
-              cursor: 'pointer',
-              '&:hover': {
-                backgroundColor: blue[600],
-                fontWeight: 400,
-              },
-            }}
-          >
-            <Person2Icon sx={{ color: 'white' }} />
-            <Box ml={2}>Profile</Box>
-          </Box>
+          <Link href="/">
+            <Box
+              sx={{
+                py: 1,
+                display: 'flex',
+                alignItems: 'center',
+                color: 'white',
+                px: 6,
+                cursor: 'pointer',
+                '&:hover': {
+                  backgroundColor: blue[600],
+                  fontWeight: 400,
+                },
+              }}
+            >
+              <Person2Icon sx={{ color: 'white' }} />
+              <Box ml={2}>Profile</Box>
+            </Box>
+          </Link>
           <Box
             sx={{
               py: 1,
@@ -108,6 +122,24 @@ const Layout: FC<any> = ({ children }) => {
               <Box ml={2}>Chatting</Box>
             </Box>
           </Link>
+          <Box
+            onClick={handleLogout}
+            sx={{
+              py: 1,
+              display: 'flex',
+              alignItems: 'center',
+              color: 'white',
+              px: 6,
+              cursor: 'pointer',
+              '&:hover': {
+                backgroundColor: blue[600],
+                fontWeight: 400,
+              },
+            }}
+          >
+            <LogoutIcon sx={{ color: 'white' }} />
+            <Box ml={2}>Logout</Box>
+          </Box>
         </Stack>
       </Grid>
       <Grid item md={10} sx={{ backgroundColor: grey[50] }}>
@@ -135,6 +167,12 @@ const Layout: FC<any> = ({ children }) => {
               <EmailIcon sx={{ color: 'black' }} />
             </Badge>
             <Person2Icon sx={{ color: 'black' }} />
+            {session.data?.user.name ? <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <Avatar sx={{ bgcolor: green[500], width: '30px', height: '30px', mr: 1 }}>N</Avatar>
+                {session.data.user.name}
+              </Box>
+            </Box> : null}
           </Stack>
         </Box>
         {children}

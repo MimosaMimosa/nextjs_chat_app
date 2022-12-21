@@ -33,6 +33,7 @@ const ProfilePhotoCard = styled(Card)({
 })
 
 const Index = () => {
+
   const fileRef = useRef<HTMLInputElement>(null)
   const [image, setImage] = useState<string>('')
 
@@ -41,7 +42,7 @@ const Index = () => {
     let fileReader = new FileReader()
     fileReader.readAsDataURL(file)
     fileReader.onload = () => {
-        setImage(fileReader.result as string)
+      setImage(fileReader.result as string)
     }
   }
   return (
@@ -51,7 +52,7 @@ const Index = () => {
           <Grid item md={4}>
             <ListOfSetting>
               <SettingLabel>Account Setting</SettingLabel>
-              <DetailOfSetting>asasa</DetailOfSetting>
+              <DetailOfSetting>'a'</DetailOfSetting>
             </ListOfSetting>
             <ListOfSetting>
               <SettingLabel>Account Setting</SettingLabel>
@@ -102,12 +103,11 @@ const Index = () => {
                 Update
               </Button>
             </ProfilePhotoCard>
-            <UpdateForm/>
+            <UpdateForm />
           </Grid>
         </Grid>
       </Box>
     </Layout>
   )
 }
-
 export default Index

@@ -9,26 +9,28 @@ import ContactSupportIcon from '@mui/icons-material/ContactSupport';
 import { blue } from '@mui/material/colors';
 import Link from 'next/link';
 import Background from '@/components/background';
-import { useRef } from 'react';
-import axios from 'axios';
-import Cookies from 'js-cookie'
+import { useRef,useState } from 'react';
+import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 
 const login = () => {
-    const email = useRef<HTMLInputElement|null>(null)
-    const password = useRef<HTMLInputElement|null>(null);
     const router = useRouter();
-
+    const email = useRef<HTMLInputElement | null>(null)
+    const password = useRef<HTMLInputElement | null>(null);
+    const [emailError,setEmailError] = useState<string>('')
+    const [passwordError,setPasswordError] = useState<string>('')
+    
     const handleSubmit = () => {
-        axios.post('http://localhost:5000/api/v1/auth/login', {
-            email: email.current?.value,
-            password: password.current?.value,
-        }).then(res => {
-            Cookies.set('chat_hub', res.data.token)
-            router.push('/');
-        }).catch(error => {
-            console.log(error.response.data)
-        })
+        signIn('credentials', { email: email.current?.value, password: password.current?.value, redirect: false })
+            .then((res) => {
+                if(res?.error){
+                    throw JSON.parse(res.error)
+                }
+               router.push('/') 
+            }).catch(error => {
+                setEmailError(error.data?.email || '');
+                setPasswordError(error.data?.password || '');
+            })
     }
 
     return (
@@ -64,11 +66,13 @@ const login = () => {
                     </Typography>
                     <Box>
                         <TextField
+                            error={emailError ? true:false}
                             inputRef={email}
                             size='small'
                             fullWidth
                             sx={{ mb: 2 }}
                             label='Email'
+                            helperText={emailError}
                             id='email'
                             InputProps={{
                                 startAdornment: (
@@ -81,8 +85,10 @@ const login = () => {
                     </Box>
                     <Box>
                         <TextField
+                            error={passwordError ? true:false}
                             inputRef={password}
                             fullWidth
+                            helperText={passwordError}
                             size='small'
                             sx={{ mb: 2 }}
                             type='password'
