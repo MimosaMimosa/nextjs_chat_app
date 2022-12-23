@@ -7,10 +7,9 @@ import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import SentimentSatisfiedAltIcon from '@mui/icons-material/SentimentSatisfiedAlt';
 import SendIcon from '@mui/icons-material/Send';
 import io from 'socket.io-client';
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import axios from 'axios'
 import { Fragment } from 'react'
-import { getSession } from 'next-auth/react'
 import { unstable_getServerSession } from 'next-auth'
 import { GetServerSidePropsContext } from 'next'
 import { authOptions } from './api/auth/[...nextAuth]'
@@ -21,7 +20,7 @@ interface MessageBoxProps {
 const ChatMessageBox = styled('div')((props: MessageBoxProps) => ({
     display: 'flex',
     justifyContent: props.sender === 1 ? 'start' : 'end',
-    marginBottom: '10px',
+    marginBottom: '5px',
 }))
 
 const Messages = styled('p')((props: MessageBoxProps) => ({
@@ -29,23 +28,17 @@ const Messages = styled('p')((props: MessageBoxProps) => ({
     borderRadius: '10px',
     padding: '10px',
     color: props.sender === 2 ? 'white' : 'inherit',
-    marginBottom: '5px',
+    marginBottom: '1px',
 }))
 
 const ChatArea = styled('div')(() => ({
-    height: '70vh',
+    flex: '1 1 auto',
+    overflowY: 'auto',
+    minHeight: '0px',
     display: 'flex',
     justifyContent: 'end',
-    padding: '15px',
-    overflowY: 'scroll',
+    padding: '15px 15px 0px 15px',
     flexDirection: 'column',
-    '&::-webkit-scrollbar': {
-        width: '5px',
-    },
-    '&::-webkit-scrollbar-thumb': {
-        backgroundColor: blue[500],
-        borderRadius: '10px'
-    }
 }))
 
 const InputMessageBox = styled('div')(() => ({
@@ -75,22 +68,86 @@ const ConservationCard = styled('div')(() => ({
 }))
 
 
-const Chat = ({ user }) => {
+const Chat = ({ user, conservations }: any) => {
     const [isConnected, setIsConnected] = useState<Boolean>(false);
-    const [conservation, setConverstaion] = useState<any>({});
+    const [conservationId, setConservationId] = useState<string>('');
+    const [conservationMessage, setConservationMessage] = useState<any>({})
+    const [receiverId, seReceiverId] = useState<string>('');
+    const [message, setMessage] = useState<string>('')
+    const scrollRef = useRef<HTMLDivElement>()
+    const socket = useRef<any>()
 
     useEffect(() => {
-        const socket = io('ws://localhost:5000');
-        socket.on('connect', () => {
-            setIsConnected(true)
+        if (conservationId) {
+            axios.get(process.env.NEXT_PUBLIC_API_URL as string + `/conservations/${conservationId}/messages`)
+                .then(res => {
+                    setConservationMessage(res.data.conservation)
+                })
+        }
+    }, [conservationId])
 
-            socket.emit('hello', 'world');
+
+    useEffect(() => {
+        socket.current = io('ws://172.20.30.44:5000');
+        socket.current.on('connect', () => {
+            setIsConnected(true)
+            socket.current.emit('addUser', user.id);
+        })
+        
+        socket.current.on('getMessage', (data: any) => {
+            if (data) {
+                setConservationMessage((prev: any) => {
+                    if (Object.keys(prev).length) {
+                        const addMessage = [...prev.messages, {
+                            _id: new Date().getTime().toString(),
+                            sender: data.senderId,
+                            receiver: user.id,
+                            message: data.message,
+                        }
+                        ]
+                        return { ...prev, messages: addMessage }
+                    }
+                    return prev;
+                })
+            }
         })
 
-        socket.on('disconnect', () => {
+        socket.current.on('disconnect', () => {
             setIsConnected(false);
         });
+
+        return () => {
+            socket.current.off('connect');
+            socket.current.off('disconnect');
+            socket.current.off('getMessage');
+        }
     }, [])
+
+    useEffect(() => {
+        setTimeout(() => {
+            scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight)
+        }, 200)
+    }, [conservationMessage])
+
+    const handleSendMessage = () => {
+        if (message) {
+
+            socket.current.emit('sendMessage', { senderId: user.id, receiverId: receiverId, message })
+
+            axios.post(process.env.NEXT_PUBLIC_API_URL as string + `/messages`, {
+                conservationId,
+                sender: user.id,
+                receiver: receiverId,
+                message,
+            }).then(res => {
+                setConservationMessage((prev: any) => {
+                    const addMessage = [...prev.messages, ...res.data.message]
+                    return { ...prev, messages: addMessage }
+                })
+                setMessage('');
+            })
+        }
+    }
 
     return (
         <Layout>
@@ -98,66 +155,68 @@ const Chat = ({ user }) => {
                 <Grid container spacing={2}>
                     <Grid item md={7}>
                         <Card>
-                            {!Object.keys(conservation).length ? <div>a</div> : <>
+                            {!Object.keys(conservationMessage ?? {}).length ? <div>a</div> : <>
 
                                 <Box sx={{ backgroundColor: grey[100], padding: '15px', justifyContent: 'center', alignItems: 'center' }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                         <Avatar
                                             sx={{ bgcolor: blue[500], cursor: 'pointer' }}
                                             alt="Remy Sharp"
-                                            src="/broken-image.jpg"
                                         >
-
                                         </Avatar>
                                         <div>
                                             <Typography component='h5' ml={2}>
-                                                Wai Yan Lin <Badge backgroundColor={green[500]}>
-                                                    {user.name}
+                                                {conservationMessage.member.filter((m: any) => {
+                                                    return m._id !== user.id
+                                                })[0].name} <Badge backgroundColor={green[500]}>
+                                                    'Active'
                                                 </Badge>
                                             </Typography>
                                         </div>
                                     </Box>
                                 </Box>
-                                <ChatArea>
-                                    <Box sx={{ width: '100%' }}>
-                                        {/* <ChatMessageBox sender={1}>
-                                        <Avatar
-                                            sx={{ bgcolor: blue[500], mr: 1 }}
-                                            alt="Remy Sharp"
-                                            src="/broken-image.jpg"
-                                        >
-                                            B
-                                        </Avatar>
-                                        <div>
-                                            <Messages sender={1}>Hello</Messages>
-                                            <Messages sender={1}>Hello</Messages>
-                                        </div>
-                                    </ChatMessageBox> */}
-                                        {[].map((conservation: any) => {
-                                            return <Fragment key={conservation._id}>
-                                                {conservation.sender === '639f4bf942e7e8cb97438f9d' ? <ChatMessageBox sender={1}>
-                                                    <Avatar
-                                                        sx={{ bgcolor: blue[500], mr: 1 }}
-                                                        alt="Remy Sharp"
-                                                    >
-                                                        B
-                                                    </Avatar>
-                                                    <div>
-                                                        <Messages sender={1}>{conservation.message}</Messages>
-                                                        {/* <Messages sender={1}>Hello</Messages> */}
-                                                    </div>
-                                                </ChatMessageBox> : <ChatMessageBox sender={2}>
-                                                    <Messages sender={2}>{conservation.message}</Messages>
-                                                </ChatMessageBox>}
-                                            </Fragment>
-                                        })}
-                                    </Box>
-                                </ChatArea>
+                                <Box sx={{
+                                    display: 'flex',
+                                    alignItems: 'end',
+                                    flexWrap: 'wrap',
+                                    scrollBehavior: 'smooth',
+                                    overflowY: 'scroll',
+                                    height: '70vh',
+                                    '&::-webkit-scrollbar': {
+                                        width: '5px',
+                                    },
+                                    '&::-webkit-scrollbar-thumb': {
+                                        backgroundColor: blue[500],
+                                        borderRadius: '10px'
+                                    }
+                                }} ref={scrollRef}>
+                                    <ChatArea>
+                                        <Box sx={{ width: '100%' }}>
+                                            {conservationMessage?.messages?.map((message: any) => {
+                                                return <Fragment key={message._id}>
+                                                    {message.sender !== user.id ? <ChatMessageBox sender={1}>
+                                                        <Avatar
+                                                            sx={{ bgcolor: blue[500], mr: 1 }}
+                                                            alt="Remy Sharp"
+                                                        >
+                                                        </Avatar>
+                                                        <div>
+                                                            <Messages sender={1}>{message.message}</Messages>
+                                                            {/* <Messages sender={1}>Hello</Messages> */}
+                                                        </div>
+                                                    </ChatMessageBox> : <ChatMessageBox sender={2}>
+                                                        <Messages sender={2}>{message.message}</Messages>
+                                                    </ChatMessageBox>}
+                                                </Fragment>
+                                            })}
+                                        </Box>
+                                    </ChatArea>
+                                </Box>
                                 <InputMessageBox>
                                     <CameraAltIcon sx={{ cursor: 'pointer' }} />
                                     <SentimentSatisfiedAltIcon sx={{ mx: 1, cursor: 'pointer' }} />
-                                    <InputMessage placeholder='Send Messages' />
-                                    <SendIcon sx={{ mx: 1, cursor: 'pointer' }} />
+                                    <InputMessage placeholder='Send Messages' value={message} onChange={(e) => { setMessage(e.target.value) }} />
+                                    <SendIcon sx={{ mx: 1, cursor: 'pointer' }} onClick={handleSendMessage} />
                                 </InputMessageBox>
                             </>}
                         </Card>
@@ -169,166 +228,37 @@ const Chat = ({ user }) => {
                                     Messages
                                 </Typography>
                             </Box>
-                            <ConservationCard sx={{ mt: 2 }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                    <Avatar
-                                        sx={{ bgcolor: 'white', cursor: 'pointer', color: blue[500] }}
-                                        alt="Remy Sharp"
-                                        src="/broken-image.jpg"
-                                    >
-                                        B
-                                    </Avatar>
-                                    <Typography component="span" sx={{ mx: 2 }}>
-                                        Wai Yan Lin
-                                    </Typography>
-                                    <Typography sx={{ fontSize: '0.7rem' }}>
-                                        Did you under stand...
-                                    </Typography>
-                                </Box>
-                                <Box>
-                                    <Typography component='span' sx={{ fontSize: '0.7rem', mx: 2 }}>
-                                        2min ago
-                                    </Typography>
-                                    <Badge>5</Badge>
-                                </Box>
-                            </ConservationCard>
-                            <ConservationCard sx={{ mt: 2 }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                    <Avatar
-                                        sx={{ bgcolor: 'white', cursor: 'pointer', color: blue[500] }}
-                                        alt="Remy Sharp"
-                                        src="/broken-image.jpg"
-                                    >
-                                        B
-                                    </Avatar>
-                                    <Typography component="span" sx={{ mx: 2 }}>
-                                        Wai Yan Lin
-                                    </Typography>
-                                    <Typography sx={{ fontSize: '0.7rem' }}>
-                                        Did you under stand...
-                                    </Typography>
-                                </Box>
-                                <Box>
-                                    <Typography component='span' sx={{ fontSize: '0.7rem', mx: 2 }}>
-                                        2min ago
-                                    </Typography>
-                                    <Badge>5</Badge>
-                                </Box>
-                            </ConservationCard>
-                            <ConservationCard sx={{ mt: 2 }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                    <Avatar
-                                        sx={{ bgcolor: 'white', cursor: 'pointer', color: blue[500] }}
-                                        alt="Remy Sharp"
-                                        src="/broken-image.jpg"
-                                    >
-                                        B
-                                    </Avatar>
-                                    <Typography component="span" sx={{ mx: 2 }}>
-                                        Wai Yan Lin
-                                    </Typography>
-                                    <Typography sx={{ fontSize: '0.7rem' }}>
-                                        Did you under stand...
-                                    </Typography>
-                                </Box>
-                                <Box>
-                                    <Typography component='span' sx={{ fontSize: '0.7rem', mx: 2 }}>
-                                        2min ago
-                                    </Typography>
-                                    <Badge>5</Badge>
-                                </Box>
-                            </ConservationCard>
-                            <ConservationCard sx={{ mt: 2 }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                    <Avatar
-                                        sx={{ bgcolor: 'white', cursor: 'pointer', color: blue[500] }}
-                                        alt="Remy Sharp"
-                                        src="/broken-image.jpg"
-                                    >
-                                        B
-                                    </Avatar>
-                                    <Typography component="span" sx={{ mx: 2 }}>
-                                        Wai Yan Lin
-                                    </Typography>
-                                    <Typography sx={{ fontSize: '0.7rem' }}>
-                                        Did you under stand...
-                                    </Typography>
-                                </Box>
-                                <Box>
-                                    <Typography component='span' sx={{ fontSize: '0.7rem', mx: 2 }}>
-                                        2min ago
-                                    </Typography>
-                                    <Badge>5</Badge>
-                                </Box>
-                            </ConservationCard>
-                            <ConservationCard sx={{ mt: 2 }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                    <Avatar
-                                        sx={{ bgcolor: 'white', cursor: 'pointer', color: blue[500] }}
-                                        alt="Remy Sharp"
-                                    >
-                                        B
-                                    </Avatar>
-                                    <Typography component="span" sx={{ mx: 2 }}>
-                                        Wai Yan Lin
-                                    </Typography>
-                                    <Typography sx={{ fontSize: '0.7rem' }}>
-                                        Did you under stand...
-                                    </Typography>
-                                </Box>
-                                <Box>
-                                    <Typography component='span' sx={{ fontSize: '0.7rem', mx: 2 }}>
-                                        2min ago
-                                    </Typography>
-                                    <Badge>5</Badge>
-                                </Box>
-                            </ConservationCard>
-                            <ConservationCard sx={{ mt: 2 }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                    <Avatar
-                                        sx={{ bgcolor: 'white', cursor: 'pointer', color: blue[500] }}
-                                        alt="Remy Sharp"
-                                        src="/broken-image.jpg"
-                                    >
-                                        B
-                                    </Avatar>
-                                    <Typography component="span" sx={{ mx: 2 }}>
-                                        Wai Yan Lin
-                                    </Typography>
-                                    <Typography sx={{ fontSize: '0.7rem' }}>
-                                        Did you under stand...
-                                    </Typography>
-                                </Box>
-                                <Box>
-                                    <Typography component='span' sx={{ fontSize: '0.7rem', mx: 2 }}>
-                                        2min ago
-                                    </Typography>
-                                    <Badge>5</Badge>
-                                </Box>
-                            </ConservationCard>
-                            <ConservationCard sx={{ mt: 2 }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                    <Avatar
-                                        sx={{ bgcolor: 'white', cursor: 'pointer', color: blue[500] }}
-                                        alt="Remy Sharp"
-                                        src="/broken-image.jpg"
-                                    >
-                                        B
-                                    </Avatar>
-                                    <Typography component="span" sx={{ mx: 2 }}>
-                                        Wai Yan Lin
-                                    </Typography>
-                                    <Typography sx={{ fontSize: '0.7rem' }}>
-                                        Did you under stand...
-                                    </Typography>
-                                </Box>
-                                <Box>
-                                    <Typography component='span' sx={{ fontSize: '0.7rem', mx: 2 }}>
-                                        2min ago
-                                    </Typography>
-                                    <Badge>5</Badge>
-                                </Box>
-                            </ConservationCard>
+                            {conservations?.map((conservation: any) => {
+                                const receiver = conservation.member.filter((m: any) => {
+                                    return m._id !== user.id
+                                })[0]
+                                return <Fragment key={conservation._id}>
+                                    <Box onClick={() => { setConservationId(conservation._id); seReceiverId(receiver._id) }} >
+                                        <ConservationCard sx={{ mt: 2 }}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                                <Avatar
+                                                    sx={{ bgcolor: blue[500], cursor: 'pointer', }}
+                                                    alt="Remy Sharp"
+                                                >
+                                                </Avatar>
+                                                <Typography component="span" sx={{ mx: 2 }}>
+                                                    {receiver.name}
+                                                </Typography>
+                                                <Typography sx={{ fontSize: '0.7rem' }}>
+                                                    {conservation.messages[0]?.message}
+                                                </Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography component='span' sx={{ fontSize: '0.7rem', mx: 2 }}>
+                                                    2min ago
+                                                </Typography>
+                                                <Badge>5</Badge>
+                                            </Box>
+                                        </ConservationCard>
+                                    </Box>
+                                </Fragment>
+                            }
+                            )}
                         </Card>
                     </Grid>
                 </Grid>
@@ -339,7 +269,7 @@ const Chat = ({ user }) => {
 
 export const getServerSideProps = async (context: GetServerSidePropsContext) => {
     const session = await unstable_getServerSession(context.req, context.res, authOptions)
-    
+
     if (!session) {
         return {
             redirect: {
@@ -349,9 +279,16 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
         }
     }
 
+    const res = await axios.get(process.env.NEXT_PUBLIC_API_URL as string + `/conservations/${session.user.id}`, {
+        headers: {
+            authorization: session.user.token
+        }
+    })
+
     return {
         props: {
             user: session?.user,
+            conservations: res.data.conservations || null,
         }
     };
 }

@@ -53,7 +53,7 @@ const login = () => {
                         borderRadius: {
                             md: '15px',
                         },
-                        backgroundColor: 'transparent',
+                        backgroundColor: 'white',
                     }}
                 >
                     <Typography
