@@ -1,17 +1,17 @@
 import { configureStore } from '@reduxjs/toolkit'
-import userReducer from './slice/userSlice'
+import messagesReducer from './slice/messengerSlice'
 
-const preloadedState = {
-    auth: {
-        user: {},
-    }
-}
+// const preloadedState = {
+//     auth: {
+//         user: {},
+//     }
+// }
 
 const store = configureStore({
     reducer:{
-        auth:userReducer,
+        messenger:messagesReducer,
     },
-    preloadedState,
+    // preloadedState,
 });
 
 export default store;

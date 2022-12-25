@@ -1,18 +1,18 @@
-import { Button, Card, InputAdornment, Typography } from '@mui/material'
+import { Button, Card, InputAdornment, Typography, Container } from '@mui/material'
 import Box from '@mui/material/Box'
 import EmailIcon from '@mui/icons-material/Email'
 import HttpsIcon from '@mui/icons-material/Https'
 import TextField from '@mui/material/TextField'
 import MaleIcon from '@mui/icons-material/Male'
 import FemaleIcon from '@mui/icons-material/Female'
-import { blue, green, pink } from '@mui/material/colors'
-import { useState } from 'react'
+import { blue, green, pink,indigo } from '@mui/material/colors'
+import { useRef, useState } from 'react'
 import Man2Icon from '@mui/icons-material/Man2'
-import { indigo } from '@mui/material/colors'
-import { Container } from '@mui/material'
 import CheckIcon from '@mui/icons-material/Check'
 import Background from '@/components/background'
 import Link from 'next/link'
+import axios from 'axios'
+import { useRouter } from 'next/router'
 
 enum Gender {
   Male = 1,
@@ -22,9 +22,30 @@ enum Gender {
 
 const register = () => {
   const [activeGender, setActiveGender] = useState<Gender>(Gender.Male)
+  const emailRef = useRef<HTMLInputElement>()
+  const passwordConfirmRef = useRef<HTMLInputElement | null>(null)
+  const passwordRef = useRef<HTMLInputElement | null>(null)
+  const [errors, setErrors] = useState<any>({})
+  const router = useRouter();
 
   const handleGender = (value: Gender) => {
     setActiveGender(value)
+  }
+
+  const handleSubmit = async () => {
+    const data = {
+      email: emailRef.current?.value,
+      password: passwordConfirmRef.current?.value,
+      passwordConfirmation: passwordRef.current?.value,
+      gender: activeGender,
+    }
+    axios.post(process.env.NEXT_PUBLIC_API_URL as string + '/auth/register', data)
+      .then(res => {
+        router.push('/login')
+      }).catch(error => {
+        setErrors(error.response.data)
+      })
+
   }
 
   return (
@@ -57,6 +78,9 @@ const register = () => {
         >
           <Box>
             <TextField
+              error={errors.email ? true : false}
+              helperText={errors.email}
+              inputRef={emailRef}
               size="small"
               fullWidth
               sx={{ mb: 2 }}
@@ -73,6 +97,9 @@ const register = () => {
           </Box>
           <Box>
             <TextField
+              error={errors.password ? true : false}
+              helperText={errors.password}
+              inputRef={passwordRef}
               size="small"
               fullWidth
               sx={{ mb: 2 }}
@@ -89,6 +116,9 @@ const register = () => {
           </Box>
           <Box>
             <TextField
+              error={errors.passwordConfirmation ? true : false}
+              helperText={errors.passwordConfirmation}
+              inputRef={passwordConfirmRef}
               size="small"
               fullWidth
               sx={{ mb: 2 }}
@@ -186,7 +216,7 @@ const register = () => {
             </Card>
           </Box>
           <Box sx={{ mb: 2 }}>
-            <Button variant="contained" fullWidth>
+            <Button variant="contained" fullWidth onClick={handleSubmit}>
               Sign Up
             </Button>
           </Box>

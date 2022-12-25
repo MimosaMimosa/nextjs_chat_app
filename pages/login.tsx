@@ -67,12 +67,12 @@ const login = () => {
                     <Box>
                         <TextField
                             error={emailError ? true:false}
+                            helperText={emailError}
                             inputRef={email}
                             size='small'
                             fullWidth
                             sx={{ mb: 2 }}
                             label='Email'
-                            helperText={emailError}
                             id='email'
                             InputProps={{
                                 startAdornment: (
@@ -86,9 +86,9 @@ const login = () => {
                     <Box>
                         <TextField
                             error={passwordError ? true:false}
+                            helperText={passwordError}
                             inputRef={password}
                             fullWidth
-                            helperText={passwordError}
                             size='small'
                             sx={{ mb: 2 }}
                             type='password'

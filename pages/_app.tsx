@@ -9,7 +9,6 @@ import { red } from '@mui/material/colors';
 import { Provider } from 'react-redux';
 import store from 'redux/store';
 import { SessionProvider } from "next-auth/react"
-import { GetServerSidePropsContext } from 'next';
 const theme = createTheme({
     palette: {
         error: {

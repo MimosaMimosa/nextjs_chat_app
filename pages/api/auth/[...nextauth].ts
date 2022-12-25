@@ -42,7 +42,6 @@ export const authOptions: NextAuthOptions = {
             return session
         },
         jwt: async ({ token, user }) => {
-            console.log(user);
             if (user?._id) {
                 token.id = user._id
                 token.token = user.token

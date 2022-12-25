@@ -1,40 +1,39 @@
-import Grid from '@mui/material/Grid'
-import { blue, green, grey } from '@mui/material/colors'
-import { Avatar, Badge, Box, Stack, Typography } from '@mui/material'
-import Person2Icon from '@mui/icons-material/Person2'
-import SettingsIcon from '@mui/icons-material/Settings'
-import { styled } from '@mui/system'
-import SearchIcon from '@mui/icons-material/Search'
+import Grid from '@mui/material/Grid';
+import { blue, green, grey } from '@mui/material/colors';
+import { Avatar, Badge, Box, Stack, Typography } from '@mui/material';
+import Person2Icon from '@mui/icons-material/Person2';
+import SettingsIcon from '@mui/icons-material/Settings';
 import NotificationsIcon from '@mui/icons-material/Notifications'
-import EmailIcon from '@mui/icons-material/Email'
+import EmailIcon from '@mui/icons-material/Email';
 import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
-import Link from 'next/link'
-import { signOut, useSession } from 'next-auth/react'
+import Link from 'next/link';
+import { signOut, useSession } from 'next-auth/react';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { useRouter } from 'next/router'
+import { useRouter } from 'next/router';
+import SearchBar from '../searchBar';
 
-const SearchBar = styled('div')(
-  () => `
-    border:2px solid ${blue[500]};
-    padding:4px 2px 4px 10px;
-    border-radius:5px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    flex:1;
-`,
-)
+// const SearchBar = styled('div')(
+//   () => `
+//     border:2px solid ${blue[500]};
+//     padding:4px 2px 4px 10px;
+//     border-radius:5px;
+//     display:flex;
+//     justify-content:space-between;
+//     align-items:center;
+//     flex:1;
+// `,
+// )
 
-const InputSearch = styled('input')({
-  width: '100%',
-  border: 'none',
-  '&:focus': {
-    outline: 'none',
-  },
-})
+// const InputSearch = styled('input')({
+//   width: '100%',
+//   border: 'none',
+//   '&:focus': {
+//     outline: 'none',
+//   },
+// })
 
 const Layout = ({ children }: { children: any }) => {
-  const session:any = useSession();
+  const session: any = useSession();
   const router = useRouter();
 
   const handleLogout = () => {
@@ -153,10 +152,7 @@ const Layout = ({ children }: { children: any }) => {
             px: 4,
           }}
         >
-          <SearchBar>
-            <InputSearch placeholder="Search Anything" />
-            <SearchIcon sx={{ color: blue[500] }} />
-          </SearchBar>
+          <SearchBar placeholder='Search anything' />
           <Stack
             sx={{ alignItems: 'center', flex: 1, justifyContent: 'end' }}
             direction="row"
@@ -164,13 +160,13 @@ const Layout = ({ children }: { children: any }) => {
           >
             <NotificationsIcon sx={{ color: 'black' }} />
             <Badge badgeContent={4} color="error">
-              <EmailIcon sx={{ color: 'black' }} />
+              <EmailIcon sx={{ color: 'black' }} /> 
             </Badge>
             <Person2Icon sx={{ color: 'black' }} />
-            {session.data?.user.name ? <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+            {session.data?.user.name || session.data?.user.email ? <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
               <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 <Avatar sx={{ bgcolor: green[500], width: '30px', height: '30px', mr: 1 }}>N</Avatar>
-                {session.data.user.name}
+                {session.data.user.name || session.data.user.email}
               </Box>
             </Box> : null}
           </Stack>
