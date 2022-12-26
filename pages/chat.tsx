@@ -33,6 +33,8 @@ const Messages = styled('p')((props: MessageBoxProps) => ({
     padding: '10px',
     color: props.sender === 2 ? 'white' : 'inherit',
     marginBottom: '1px',
+    maxWidth: '300px',
+    lineHeight: '1.5rem'
 }))
 
 const ChatArea = styled('div')(() => ({
@@ -78,6 +80,8 @@ const Chat = ({ user, conversations }: any) => {
     const [conversationId, setConversationId] = useState<string>('');
     const [message, setMessage] = useState<string>('')
     const [searchUser, setSearchUser] = useState<any>([]);
+    const [typingUser, setTypingUSer] = useState<any>({})
+    const typingTimeOutRef = useRef<any>();
 
     const messenger = useSelector((state: any) =>
         state.messenger.conversations.find(
@@ -114,10 +118,29 @@ const Chat = ({ user, conversations }: any) => {
             dispatch(addActiveUsers(users))
         })
 
+        socket.current.on('typingUser', ({ senderId }: any) => {
+            const chatConversation = conversations.find((c: any) => c.friend._id === senderId)
+            if (chatConversation) {
+                clearTimeout(typingTimeOutRef.current);
+                setTypingUSer({ id: senderId })
+                typingTimeOutRef.current = setTimeout(() => {
+                    setTypingUSer({})
+                }, 1000)
+            }
+        })
+
         socket.current.on('getMessage', (data: any) => {
             if (data) {
-                console.log(data);
                 dispatch(addMessage(data));
+                const conversation = conversations.find((c: any) => c._id === data.conversationId);
+                conversation.message = {
+                    _id: Date.now().toLocaleString(),
+                    senderId: data.senderId,
+                    conversationId: data.conversationId,
+                    content: data.content,
+                    createdAt: Date.now().toLocaleString(),
+                    updatedAt: Date.now().toLocaleString(),
+                }
             }
         })
 
@@ -130,14 +153,28 @@ const Chat = ({ user, conversations }: any) => {
             socket.current.off('disconnect');
             socket.current.off('getMessage');
             socket.current.off('activeUsers');
+            socket.current.off('typingUser');
         }
     }, [])
+
+    useEffect(() => {
+        if (isConnected) {
+            socket.current.emit('typing', {
+                receiverId: conversations.find((c: any) => c._id === conversationId).friend._id,
+                senderId: user.id,
+            })
+        }
+
+        return () => {
+            socket.current.off('typing')
+        }
+    }, [message])
 
     useEffect(() => {
         setTimeout(() => {
             scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight)
         }, 200)
-    }, [messenger])
+    }, [messenger, typingUser.id])
 
     const handleSendMessage = useCallback(() => {
         if (message) {
@@ -146,11 +183,11 @@ const Chat = ({ user, conversations }: any) => {
                 senderId: user.id,
                 receiverId: conversations.find((c: any) => c._id === conversationId).friend._id,
                 content: {
+                    _id: Date.now().toLocaleString(),
                     body: message,
                     contentType: 1,
                 }
             }
-            console.log(data);
             socket.current.emit('sendMessage', data)
 
             axios.post(process.env.NEXT_PUBLIC_API_URL as string + `/messages`, {
@@ -165,6 +202,21 @@ const Chat = ({ user, conversations }: any) => {
                     authorization: user.token
                 }
             }).then(res => {
+                const conversation = conversations.find((c: any) => c._id === conversationId)
+                conversation.message = {
+                    _id: Date.now().toLocaleString(),
+                    conversationId,
+                    senderId: user.id,
+                    createdAt: Date.now().toLocaleString(),
+                    updatedAt: Date.now().toLocaleString(),
+                    content: {
+                        _id: Date.now().toLocaleString(),
+                        body: message,
+                        contentType: 1,
+                        createdAt: Date.now().toLocaleString(),
+                        updatedAt: Date.now().toLocaleString(),
+                    }
+                }
                 dispatch(addMessage(res.data.message))
                 setMessage('');
             }).catch(error => {
@@ -230,6 +282,7 @@ const Chat = ({ user, conversations }: any) => {
                                     </Box>
                                 </Box>
                                 <Box sx={{
+                                    position: 'relative',
                                     display: 'flex',
                                     alignItems: 'end',
                                     flexWrap: 'wrap',
@@ -263,6 +316,15 @@ const Chat = ({ user, conversations }: any) => {
                                                         </ChatMessageBox>}
                                                 </Fragment>
                                             })}
+                                            {typingUser.id === messenger.friend._id ?
+                                                <div className="chat-bubble" style={{ marginBottom: '2px' }}>
+                                                    <div className="typing">
+                                                        <div className="dot"></div>
+                                                        <div className="dot"></div>
+                                                        <div className="dot"></div>
+                                                    </div>
+                                                </div> : null
+                                            }
                                         </Box>
                                     </ChatArea>
                                 </Box>
@@ -298,7 +360,10 @@ const Chat = ({ user, conversations }: any) => {
                                                             {conversation.friend.name}
                                                         </Typography>
                                                         <Typography sx={{ fontSize: '0.7rem' }}>
-                                                            {conversation.message.content.body}
+                                                            {conversation.message.content.body.length > 20 ?
+                                                                conversation.message.content.body.substr(0, 15) + '.....' :
+                                                                conversation.message.content.body
+                                                            }
                                                         </Typography>
                                                     </Box>
                                                     <Box>
