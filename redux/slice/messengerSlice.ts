@@ -1,11 +1,20 @@
 import { createSlice } from '@reduxjs/toolkit'
+import { type } from 'os'
+
+
+export type TContent = {
+    body:string,
+    contentType:number,
+    createdAt: Date,
+    updatedAt: Date,
+}
 
 export type TMessages = {
     _id: string,
     conversationId: string,
     senderId: string,
     receiverId: string,
-    message: string,
+    content:TContent,
     createdAt: Date,
     updatedAt: Date,
 }
@@ -16,9 +25,16 @@ export type TMembers = {
     email: string,
 }
 
+export type TFriend = {
+    _id: string,
+    name: string,
+    email: string,
+}
+
 type TConversations = {
     _id: string,
     members: Array<TMembers>,
+    fiend: TFriend,
     type: number,
     name: string | null,
     createdAt: Date,
@@ -28,7 +44,7 @@ type TConversations = {
 
 type TInitialState = {
     conversations: Array<TConversations>
-    activeUsers: Array<String>
+    activeUsers: Array<string>
 }
 
 const initialState: TInitialState = {
@@ -52,7 +68,6 @@ export const messengerSlice = createSlice({
             state.activeUsers = payload;
         },
         addMessage: (state, { payload }) => {
-            console.log(payload);
             const conversation = state.conversations.find((c: TConversations) => c._id === payload.conversationId)
             if (conversation) {
                 conversation.messages.push(payload)

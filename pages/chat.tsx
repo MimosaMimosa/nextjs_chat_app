@@ -7,7 +7,7 @@ import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import SentimentSatisfiedAltIcon from '@mui/icons-material/SentimentSatisfiedAlt';
 import SendIcon from '@mui/icons-material/Send';
 import io from 'socket.io-client';
-import { useEffect, useState, useRef, Fragment } from 'react'
+import { useEffect, useState, useRef, Fragment, useCallback } from 'react'
 import axios from 'axios'
 import { unstable_getServerSession } from 'next-auth'
 import { GetServerSidePropsContext } from 'next'
@@ -15,7 +15,7 @@ import { authOptions } from './api/auth/[...nextAuth]'
 import SearchBar from '@/components/searchBar'
 import { useDispatch, useSelector } from 'react-redux'
 import { addActiveUsers, addConversation, addMessage } from 'redux/slice/messengerSlice'
-import { TMembers, TMessages } from 'redux/slice/messengerSlice'
+import { TMessages } from 'redux/slice/messengerSlice'
 
 interface MessageBoxProps {
     sender: number
@@ -72,12 +72,10 @@ const ConservationCard = styled('div')(() => ({
 }))
 
 
-const Chat = ({ user, conservations }: any) => {
+const Chat = ({ user, conversations }: any) => {
     const dispatch = useDispatch();
-    const [isConnected, setIsConnected] = useState<Boolean>(false);
+    const [isConnected, setIsConnected] = useState<boolean>(false);
     const [conversationId, setConversationId] = useState<string>('');
-    const [conservationMessage, setConservationMessage] = useState<any>({})
-    const [receiverId, seReceiverId] = useState<string>('');
     const [message, setMessage] = useState<string>('')
     const [searchUser, setSearchUser] = useState<any>([]);
 
@@ -93,7 +91,11 @@ const Chat = ({ user, conservations }: any) => {
 
     useEffect(() => {
         if (conversationId) {
-            axios.get(process.env.NEXT_PUBLIC_API_URL as string + `/conversations/${conversationId}/messages`)
+            axios.get(process.env.NEXT_PUBLIC_API_URL as string + `/conversations/${conversationId}/messages`, {
+                headers: {
+                    authorization: user.token,
+                }
+            })
                 .then(res => {
                     dispatch(addConversation(res.data.conversation))
                 })
@@ -109,12 +111,12 @@ const Chat = ({ user, conservations }: any) => {
         })
 
         socket.current.on('activeUsers', (users: string[]) => {
-            console.log(users)
             dispatch(addActiveUsers(users))
         })
 
         socket.current.on('getMessage', (data: any) => {
             if (data) {
+                console.log(data);
                 dispatch(addMessage(data));
             }
         })
@@ -135,25 +137,43 @@ const Chat = ({ user, conservations }: any) => {
         setTimeout(() => {
             scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight)
         }, 200)
-    }, [conservationMessage])
+    }, [messenger])
 
-    const handleSendMessage = () => {
+    const handleSendMessage = useCallback(() => {
         if (message) {
-            socket.current.emit('sendMessage', { conversationId, senderId: user.id, receiverId: receiverId, message })
+            const data = {
+                conversationId,
+                senderId: user.id,
+                receiverId: conversations.find((c: any) => c._id === conversationId).friend._id,
+                content: {
+                    body: message,
+                    contentType: 1,
+                }
+            }
+            console.log(data);
+            socket.current.emit('sendMessage', data)
 
             axios.post(process.env.NEXT_PUBLIC_API_URL as string + `/messages`, {
                 conversationId,
                 senderId: user.id,
-                receiverId,
-                message,
+                content: {
+                    body: message,
+                    contentType: 1,
+                }
+            }, {
+                headers: {
+                    authorization: user.token
+                }
             }).then(res => {
                 dispatch(addMessage(res.data.message))
                 setMessage('');
+            }).catch(error => {
+                console.log(error);
             })
         }
-    }
+    }, [message])
 
-    const handleSearchUser = (e: any) => {
+    const handleSearchUser = useCallback((e: any) => {
         clearTimeout(timeOutRef.current);
         timeOutRef.current = setTimeout(() => {
             if (e.target.value) {
@@ -162,7 +182,6 @@ const Chat = ({ user, conservations }: any) => {
                         q: e.target.value
                     }
                 }).then(res => {
-                    console.log(res.data.users);
                     if (res.data.users.length) {
                         setSearchUser(res.data.users)
                     }
@@ -171,31 +190,35 @@ const Chat = ({ user, conservations }: any) => {
                 setSearchUser([]);
             }
         }, 300)
-    }
+    }, [])
+
+    const chatConversation = useCallback((e: any) => {
+        setConversationId(e.currentTarget.id)
+    }, [])
+
+    const getInputMessage = useCallback((e: any) => {
+        setMessage(e.currentTarget.value)
+    }, []);
 
     return (
         <Layout>
-            <Box sx={{ p: 2 }}>
+            <Box sx={{ px: 2 }}>
                 <Grid container spacing={2}>
                     <Grid item md={7}>
                         <Card>
-                            {!messenger ? <div>a</div> : <>
-
+                            {!messenger ? null : <>
                                 <Box sx={{ backgroundColor: grey[100], padding: '15px', justifyContent: 'center', alignItems: 'center' }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                         <Avatar
                                             sx={{ bgcolor: blue[500], cursor: 'pointer' }}
-                                            alt="Remy Sharp"
                                         >
                                         </Avatar>
-                                        <Box sx={{ display: 'flex', alignItems:'center' }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                             <Typography component='h5' mx={1}>
-                                                {messenger.members?.find((m: TMembers) => {
-                                                    return m._id !== user.id
-                                                })?.name}
+                                                {messenger.friend.name}
                                             </Typography>
                                             <Box>
-                                                {activeUsers.includes(messenger.members?.find((m: TMembers) => m._id !== user.id)?._id) ?
+                                                {activeUsers.includes(messenger.friend._id) ?
                                                     <Badge backgroundColor={green[500]}>
                                                         Active
                                                     </Badge> :
@@ -228,16 +251,15 @@ const Chat = ({ user, conservations }: any) => {
                                                     {message.senderId !== user.id ? <ChatMessageBox sender={1}>
                                                         <Avatar
                                                             sx={{ bgcolor: blue[500], mr: 1 }}
-                                                            alt="Remy Sharp"
                                                         >
                                                         </Avatar>
                                                         <div>
-                                                            <Messages sender={1}>{message.message}</Messages>
+                                                            <Messages sender={1}>{message.content.body}</Messages>
                                                             {/* <Messages sender={1}>Hello</Messages> */}
                                                         </div>
                                                     </ChatMessageBox> :
                                                         <ChatMessageBox sender={2}>
-                                                            <Messages sender={2}>{message.message}</Messages>
+                                                            <Messages sender={2}>{message.content.body}</Messages>
                                                         </ChatMessageBox>}
                                                 </Fragment>
                                             })}
@@ -247,7 +269,7 @@ const Chat = ({ user, conservations }: any) => {
                                 <InputMessageBox>
                                     <CameraAltIcon sx={{ cursor: 'pointer' }} />
                                     <SentimentSatisfiedAltIcon sx={{ mx: 1, cursor: 'pointer' }} />
-                                    <InputMessage placeholder='Send Messages' value={message} onChange={(e) => { setMessage(e.target.value) }} />
+                                    <InputMessage placeholder='Send Messages' value={message} onChange={getInputMessage} />
                                     <SendIcon sx={{ mx: 1, cursor: 'pointer' }} onClick={handleSendMessage} />
                                 </InputMessageBox>
                             </>}
@@ -263,24 +285,20 @@ const Chat = ({ user, conservations }: any) => {
                             </Box>
                             {!searchUser.length ?
                                 <Box>
-                                    {conservations?.map((conservation: any) => {
-                                        const receiver = conservation.members.find((m: any) => {
-                                            return m._id !== user.id
-                                        })
-                                        return <Fragment key={conservation._id}>
-                                            <Box onClick={() => { setConversationId(conservation._id); seReceiverId(receiver._id) }} >
+                                    {conversations?.map((conversation: any) => {
+                                        return <Fragment key={conversation._id}>
+                                            <Box onClick={chatConversation} id={conversation._id}>
                                                 <ConservationCard sx={{ mt: 2 }}>
                                                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                                                         <Avatar
                                                             sx={{ bgcolor: blue[500], cursor: 'pointer', }}
-                                                            alt="Remy Sharp"
                                                         >
                                                         </Avatar>
                                                         <Typography component="span" sx={{ mx: 2 }}>
-                                                            {receiver.name}
+                                                            {conversation.friend.name}
                                                         </Typography>
                                                         <Typography sx={{ fontSize: '0.7rem' }}>
-                                                            {conservation.messages[0]?.message}
+                                                            {conversation.message.content.body}
                                                         </Typography>
                                                     </Box>
                                                     <Box>
@@ -316,7 +334,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
         }
     }
 
-    const res = await axios.get(process.env.NEXT_PUBLIC_API_URL as string + `/conversations/${session.user.id}`, {
+    const res = await axios.get(process.env.NEXT_PUBLIC_API_URL as string + `/conversations`, {
         headers: {
             authorization: session.user.token
         }
@@ -325,7 +343,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     return {
         props: {
             user: session?.user,
-            conservations: res.data.conversations || null,
+            conversations: res.data.conversations || null,
         }
     };
 }
