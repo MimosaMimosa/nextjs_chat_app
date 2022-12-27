@@ -1,0 +1,10 @@
+# Technology
+- [ReactJs](https://reactjs.org/)
+- [NextJs](https://nextjs.org/)
+- [NextAuth](https://next-auth.js.org/)
+- [ExpressJs](https://expressjs.com/)
+- [socket.io](https://socket.io/)
+- [Jose](https://www.npmjs.com/package/jose)
+- [Joi](https://joi.dev/)
+- [MongoDB](https://www.mongodb.com/)
+- [ReduxToolkit](https://redux-toolkit.js.org/)
