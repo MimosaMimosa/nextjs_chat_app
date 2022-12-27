@@ -8,3 +8,4 @@
 - [Joi](https://joi.dev/)
 - [MongoDB](https://www.mongodb.com/)
 - [ReduxToolkit](https://redux-toolkit.js.org/)
+- [MUI](https://mui.com/)
