@@ -31,10 +31,10 @@ export type TFriend = {
     email: string,
 }
 
-type TConversations = {
+export type TConversation = {
     _id: string,
     members: Array<TMembers>,
-    fiend: TFriend,
+    friend: TFriend,
     type: number,
     name: string | null,
     createdAt: Date,
@@ -43,7 +43,7 @@ type TConversations = {
 }
 
 type TInitialState = {
-    conversations: Array<TConversations>
+    conversations: Array<TConversation>
     activeUsers: Array<string>
 }
 
@@ -57,7 +57,7 @@ export const messengerSlice = createSlice({
     initialState,
     reducers: {
         addConversation: (state, { payload }) => {
-            const index = state.conversations.findIndex((c: TConversations) => c._id === payload._id);
+            const index = state.conversations.findIndex((c: TConversation) => c._id === payload._id);
             if (index !== -1) {
                 state.conversations[index] = payload;
             } else {
@@ -68,7 +68,7 @@ export const messengerSlice = createSlice({
             state.activeUsers = payload;
         },
         addMessage: (state, { payload }) => {
-            const conversation = state.conversations.find((c: TConversations) => c._id === payload.conversationId)
+            const conversation = state.conversations.find((c: TConversation) => c._id === payload.conversationId)
             if (conversation) {
                 conversation.messages.push(payload)
             }

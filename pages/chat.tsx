@@ -1,21 +1,21 @@
-import Layout from '@/components/layout/layout'
-import { Grid, Box, Card, Avatar, Typography } from '@mui/material'
-import { styled } from '@mui/system'
-import { grey, blue, green, red } from '@mui/material/colors'
-import Badge from '@/components/badge'
+import Layout from '@/components/layout/layout';
+import { Grid, Box, Card, Avatar, Typography } from '@mui/material';
+import { styled } from '@mui/system';
+import { grey, blue, green, red } from '@mui/material/colors';
+import Badge from '@/components/badge';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import SentimentSatisfiedAltIcon from '@mui/icons-material/SentimentSatisfiedAlt';
 import SendIcon from '@mui/icons-material/Send';
 import io from 'socket.io-client';
-import { useEffect, useState, useRef, Fragment, useCallback } from 'react'
-import axios from 'axios'
-import { unstable_getServerSession } from 'next-auth'
-import { GetServerSidePropsContext } from 'next'
-import { authOptions } from './api/auth/[...nextAuth]'
-import SearchBar from '@/components/searchBar'
-import { useDispatch, useSelector } from 'react-redux'
-import { addActiveUsers, addConversation, addMessage } from 'redux/slice/messengerSlice'
-import { TMessages } from 'redux/slice/messengerSlice'
+import { useEffect, useState, useRef, Fragment, useCallback } from 'react';
+import axios from 'axios';
+import { unstable_getServerSession } from 'next-auth';
+import { GetServerSidePropsContext } from 'next';
+// @ts-ignore: Unreachable code error
+import { authOptions } from './api/auth/[...nextAuth]';
+import { useDispatch, useSelector } from 'react-redux';
+import { addActiveUsers, addConversation, addMessage, TMessages, TConversation } from 'redux/slice/messengerSlice'
+import ConversationLists from '@/components/pages/chat/ConversationLists'
 
 interface MessageBoxProps {
     sender: number
@@ -64,34 +64,22 @@ const InputMessage = styled('input')(() => ({
     }
 }))
 
-const ConservationCard = styled('div')(() => ({
-    border: `1px solid ${blue[500]}`,
-    borderRadius: '10px',
-    padding: "10px",
-    display: 'flex',
-    justifyContent: 'space-between',
-    cursor: 'pointer',
-}))
-
-
 const Chat = ({ user, conversations }: any) => {
     const dispatch = useDispatch();
     const [isConnected, setIsConnected] = useState<boolean>(false);
     const [conversationId, setConversationId] = useState<string>('');
-    const [message, setMessage] = useState<string>('')
-    const [searchUser, setSearchUser] = useState<any>([]);
+
     const [typingUser, setTypingUSer] = useState<any>({})
     const typingTimeOutRef = useRef<any>();
-
-    const messenger = useSelector((state: any) =>
+    const sendMessageRef = useRef<HTMLInputElement | null>(null);
+    const messenger: TConversation = useSelector((state: any) =>
         state.messenger.conversations.find(
             (c: any) => c._id === conversationId));
-
     const activeUsers = useSelector((state: any) => state.messenger.activeUsers)
 
     const scrollRef = useRef<HTMLDivElement>()
     const socket = useRef<any>()
-    const timeOutRef = useRef<any>();
+    // const timeOutRef = useRef<any>();
 
     useEffect(() => {
         if (conversationId) {
@@ -108,7 +96,7 @@ const Chat = ({ user, conversations }: any) => {
 
 
     useEffect(() => {
-        socket.current = io('ws://localhost:5000');
+        socket.current = io('ws://172.20.30.44:5000');
         socket.current.on('connect', () => {
             setIsConnected(true)
             socket.current.emit('addUser', user.id);
@@ -158,33 +146,20 @@ const Chat = ({ user, conversations }: any) => {
     }, [])
 
     useEffect(() => {
-        if (isConnected) {
-            socket.current.emit('typing', {
-                receiverId: conversations.find((c: any) => c._id === conversationId).friend._id,
-                senderId: user.id,
-            })
-        }
-
-        return () => {
-            socket.current.off('typing')
-        }
-    }, [message])
-
-    useEffect(() => {
         setTimeout(() => {
             scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight)
         }, 200)
     }, [messenger, typingUser.id])
 
     const handleSendMessage = useCallback(() => {
-        if (message) {
+        if (sendMessageRef.current?.value) {
             const data = {
                 conversationId,
                 senderId: user.id,
                 receiverId: conversations.find((c: any) => c._id === conversationId).friend._id,
                 content: {
                     _id: Date.now().toLocaleString(),
-                    body: message,
+                    body: sendMessageRef.current.value,
                     contentType: 1,
                 }
             }
@@ -194,7 +169,7 @@ const Chat = ({ user, conversations }: any) => {
                 conversationId,
                 senderId: user.id,
                 content: {
-                    body: message,
+                    body: sendMessageRef.current.value,
                     contentType: 1,
                 }
             }, {
@@ -211,46 +186,56 @@ const Chat = ({ user, conversations }: any) => {
                     updatedAt: Date.now().toLocaleString(),
                     content: {
                         _id: Date.now().toLocaleString(),
-                        body: message,
+                        body: sendMessageRef.current?.value,
                         contentType: 1,
                         createdAt: Date.now().toLocaleString(),
                         updatedAt: Date.now().toLocaleString(),
                     }
                 }
                 dispatch(addMessage(res.data.message))
-                setMessage('');
+                if (sendMessageRef.current) {
+                    sendMessageRef.current.value = '';
+                }
             }).catch(error => {
                 console.log(error);
             })
         }
-    }, [message])
+    }, [conversationId])
 
-    const handleSearchUser = useCallback((e: any) => {
-        clearTimeout(timeOutRef.current);
-        timeOutRef.current = setTimeout(() => {
-            if (e.target.value) {
-                axios.get(process.env.NEXT_PUBLIC_API_URL as string + '/users/search', {
-                    params: {
-                        q: e.target.value
-                    }
-                }).then(res => {
-                    if (res.data.users.length) {
-                        setSearchUser(res.data.users)
-                    }
-                })
-            } else {
-                setSearchUser([]);
-            }
-        }, 300)
-    }, [])
+    // const handleSearchUser = useCallback((e: any) => {
+    //     clearTimeout(timeOutRef.current);
+    //     timeOutRef.current = setTimeout(() => {
+    //         if (e.target.value) {
+    //             axios.get(process.env.NEXT_PUBLIC_API_URL as string + '/users/search', {
+    //                 params: {
+    //                     q: e.target.value
+    //                 }
+    //             }).then(res => {
+    //                 if (res.data.users.length) {
+    //                     setSearchUser(res.data.users)
+    //                 }
+    //             })
+    //         } else {
+    //             setSearchUser([]);
+    //         }
+    //     }, 300)
+    // }, [])
 
     const chatConversation = useCallback((e: any) => {
         setConversationId(e.currentTarget.id)
     }, [])
 
     const getInputMessage = useCallback((e: any) => {
-        setMessage(e.currentTarget.value)
-    }, []);
+        if (isConnected) {
+            socket.current.emit('typing', {
+                receiverId: conversations.find((c: any) => c._id === conversationId).friend._id,
+                senderId: user.id,
+            })
+        }
+        if (e.key === 'Enter') {
+            handleSendMessage();
+        }
+    }, [conversationId]);
 
     return (
         <Layout>
@@ -331,55 +316,14 @@ const Chat = ({ user, conversations }: any) => {
                                 <InputMessageBox>
                                     <CameraAltIcon sx={{ cursor: 'pointer' }} />
                                     <SentimentSatisfiedAltIcon sx={{ mx: 1, cursor: 'pointer' }} />
-                                    <InputMessage placeholder='Send Messages' value={message} onChange={getInputMessage} />
+                                    <InputMessage placeholder='Send Messages' ref={sendMessageRef} onKeyDown={getInputMessage} />
                                     <SendIcon sx={{ mx: 1, cursor: 'pointer' }} onClick={handleSendMessage} />
                                 </InputMessageBox>
                             </>}
                         </Card>
                     </Grid>
                     <Grid item md={5}>
-                        <Card sx={{ padding: '15px' }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'between', alignItems: 'center' }}>
-                                <Typography variant='h5' component='h5' sx={{ flex: 1 }}>
-                                    Messages
-                                </Typography>
-                                <SearchBar placeholder='Search User' onKeyDown={handleSearchUser} />
-                            </Box>
-                            {!searchUser.length ?
-                                <Box>
-                                    {conversations?.map((conversation: any) => {
-                                        return <Fragment key={conversation._id}>
-                                            <Box onClick={chatConversation} id={conversation._id}>
-                                                <ConservationCard sx={{ mt: 2 }}>
-                                                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                                        <Avatar
-                                                            sx={{ bgcolor: blue[500], cursor: 'pointer', }}
-                                                        >
-                                                        </Avatar>
-                                                        <Typography component="span" sx={{ mx: 2 }}>
-                                                            {conversation.friend.name}
-                                                        </Typography>
-                                                        <Typography sx={{ fontSize: '0.7rem' }}>
-                                                            {conversation.message.content.body.length > 20 ?
-                                                                conversation.message.content.body.substr(0, 15) + '.....' :
-                                                                conversation.message.content.body
-                                                            }
-                                                        </Typography>
-                                                    </Box>
-                                                    <Box>
-                                                        <Typography component='span' sx={{ fontSize: '0.7rem', mx: 2 }}>
-                                                            2min ago
-                                                        </Typography>
-                                                        <Badge>5</Badge>
-                                                    </Box>
-                                                </ConservationCard>
-                                            </Box>
-                                        </Fragment>
-                                    }
-                                    )}
-                                </Box>
-                                : null}
-                        </Card>
+                        <ConversationLists conversations={conversations} chatConversation={chatConversation} />
                     </Grid>
                 </Grid>
             </Box>
